@@ -61,4 +61,47 @@ const UserLogin = async (req: Request, res: Response): Promise<Response> => {
     }
 }
 
-export default {Register, UserLogin};
+const RefreshToken = async (req: Request, res: Response): Promise<Response> => {
+    try {
+        const refresh_token = req.cookies?.refresh_token;
+        if (!refresh_token) return res.status(401).send(Helper.responseData(401, 'unauthorized', ""));
+        const decodeUser = Helper.getDataRefreshToken(refresh_token);
+        if (decodeUser) {
+            const userId = Number(decodeUser.id);
+            const dataUser = {
+                id: decodeUser.id,
+                name: decodeUser.name,
+                email: decodeUser.email,
+                role_id: decodeUser.role_id,
+                verified: decodeUser.verified,
+                active: decodeUser.active
+            }
+            const token = Helper.generateToken(dataUser);
+            const refreshToken = Helper.generateRefreshToken(dataUser);
+            res.cookie('refresh_token', refreshToken, {
+                httpOnly: true,
+                maxAge: 24 * 60 * 60 * 100
+            });
+            await User.update({access_token: refreshToken}, {
+                where: {
+                    id: userId
+                }
+            });
+            const responseUser = {
+                ...dataUser,
+                token: token
+            }
+            return res.status(200).send(Helper.responseData(200, 'ok', responseUser));
+        }
+        console.log("401");
+        return res.status(401).send(Helper.responseData(401, 'unauthorized', ""));
+    } catch (err) {
+        if (err != null && err instanceof Error) {
+            return res.status(500).send(Helper.responseData(500, err.message, err));
+        } else {
+            return res.status(500).send(Helper.responseData(500, "internal server error", err));
+        }
+    }
+}
+
+export default {Register, UserLogin, RefreshToken};

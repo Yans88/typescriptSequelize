@@ -22,7 +22,7 @@ const responseData = (status: number, message: string | null, data: any | null) 
 }
 
 const generateToken = (data: any): string => {
-    return jwt.sign(data, process.env.JWT_KEY as string, {expiresIn: "10m"});
+    return jwt.sign(data, process.env.JWT_KEY as string, {expiresIn: "120m"});
 }
 
 const generateRefreshToken = (data: any): string => {
